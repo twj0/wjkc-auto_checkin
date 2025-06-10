@@ -1,0 +1,37 @@
+name: wjkc.lol Automatic Daily Check-in
+
+on:
+  schedule:
+    # 北京时间每天早上8点10分执行 (UTC时间 00:10)
+    - cron: '10 0 * * *'
+  # 允许在Actions页面手动触发
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      # 在你的仓库 Settings > Secrets and variables > Actions 中设置以下密钥
+      BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+      CHAT_ID: ${{ secrets.CHAT_ID }}
+      
+      # 你可以按需添加更多用户
+      USER1: ${{ secrets.USER1 }}
+      PASS1: ${{ secrets.PASS1 }}
+      USER2: ${{ secrets.USER2 }} # 如果有第二个用户
+      PASS2: ${{ secrets.PASS2 }} # 如果有第二个用户
+
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run the check-in script
+        run: python auto_checkin.py
