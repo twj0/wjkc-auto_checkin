@@ -6,7 +6,7 @@ import base64
 # vvvvv  请在这里填入您的邮箱和密码  vvvvv
 DOMAIN = "https://wjkc.lol"
 USERNAME = ""  # <-- 1. PUT YOUR EMAIL HERE
-PASSWORD = "123456wjkc"          # <-- 2. PUT YOUR PASSWORD HERE
+PASSWORD = ""          # <-- 2. PUT YOUR PASSWORD HERE
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 # --- API Endpoints (已验证) ---
