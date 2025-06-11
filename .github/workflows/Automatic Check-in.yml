@@ -1,26 +1,40 @@
-name: wjkc.lol Automatic Daily Check-in
+name: wjkc.lol Automatic Daily Check-in (Stealth Mode)
 
 on:
-  workflow_dispatch: # 我们暂时只保留手动触发，方便您测试
   schedule:
-    - cron: '10 0 * * *' # 北京时间每天早上8点10分
+    # 北京时间每天早上8点10分执行 (UTC时间 00:10)
+    - cron: '10 0 * * *'
+  # 允许在Actions页面手动触发，方便我们进行最终测试
+  workflow_dispatch:
 
 jobs:
-  checkin:
+  checkin-job:
     runs-on: ubuntu-latest
     env:
+      # 在你的仓库 Settings > Secrets and variables > Actions 中设置以下密钥
       USER1: ${{ secrets.USER1 }}
       PASS1: ${{ secrets.PASS1 }}
+      # 如果需要，可以添加USER2, PASS2等
+      # USER2: ${{ secrets.USER2 }}
+      # PASS2: ${{ secrets.PASS2 }}
 
     steps:
-      - name: Checkout Repository Code
+      - name: Checkout repository code
         uses: actions/checkout@v4
-      - name: Set up Python
+
+      - name: Set up Python 3.9
         uses: actions/setup-python@v5
-        with: { python-version: '3.9' }
+        with:
+          python-version: '3.9'
+      
+      # 步骤1: 在云端服务器上安装Google Chrome
       - name: Install Google Chrome
         run: sudo apt-get update && sudo apt-get install -y google-chrome-stable
+
+      # 步骤2: 安装所有Python依赖
       - name: Install Python Dependencies
         run: pip install selenium webdriver-manager
-      - name: Run Check-in Script
+          
+      # 步骤3: 运行我们最先进的“隐身模式”自动化脚本
+      - name: Run Stealth Mode Check-in Script
         run: python auto_checkin.py
