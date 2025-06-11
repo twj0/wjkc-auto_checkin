@@ -3,101 +3,64 @@ import json
 import base64
 
 # --- 1. 配置您的账户信息 ---
-# vvvvv  请在这里填入您的邮箱和密码  vvvvv
-DOMAIN = "https://wjkc.lol"
-USERNAME = ""  # <-- 1. PUT YOUR EMAIL HERE
-PASSWORD = ""          # <-- 2. PUT YOUR PASSWORD HERE
-# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# vvvvv  请在这里填入您那个【新账号】的邮箱和密码  vvvvv
+USERNAME = "3150774524@qq.com" # 我已经帮您填好了
+PASSWORD = "123456wjkc" # <-- 在这里输入新账号的密码
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 # --- API Endpoints (已验证) ---
 LOGIN_URL = "https://wjkc.lol/api/user/login"
 CHECKIN_URL = "https://wjkc.lol/api/user/sign_use"
 
-def run_local_checkin_test():
-    """
-    一个专为本地测试设计的函数，会详细打印每一步的执行过程和结果。
-    """
-    print("--- 本地签到测试开始 ---")
+def run_debug_checkin():
+    print("--- 本地签到【深度调试模式】---")
     print(f"账户: {USERNAME}")
-    print("-" * 26)
+    print("-" * 30)
 
-    # session会话对象，用于在登录后保持状态
     session = requests.Session()
     session.headers.update({
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36'
     })
 
     try:
-        # --- 第1步：登录 ---
-        print(f"[1] 正在尝试登录...")
-        print(f"   -> 地址: {LOGIN_URL}")
-        
-        login_payload = {'email': USERNAME, 'password': PASSWORD}
-        login_response = session.post(LOGIN_URL, json=login_payload)
-        login_response.raise_for_status()  # 如果服务器返回错误状态码 (如404, 500)，会在此抛出异常
-        
-        login_json = login_response.json()
-        if login_json.get('data') is None and login_json.get('token') is None:
-            raise ValueError(f"登录失败，服务器消息: {login_json.get('message', '未知错误')}")
-        
-        print("[1] ✅ 登录成功！服务器已授权访问。")
-        print("-" * 26)
+        # --- 登录 ---
+        print("[1] 正在登录...")
+        login_response = session.post(LOGIN_URL, json={'email': USERNAME, 'password': PASSWORD})
+        login_response.raise_for_status()
+        print("[1] ✅ 登录成功！")
 
-        # --- 第2步：执行签到 ---
-        print(f"[2] 正在执行签到...")
-        print(f"   -> 地址: {CHECKIN_URL}")
-
-        # 发送签到请求，我们使用之前登录成功的同一个session对象
-        checkin_payload = {"data": "e30="} # 这个是固定的请求体
-        checkin_response = session.post(CHECKIN_URL, json=checkin_payload)
+        # --- 执行签到 ---
+        print("\n[2] 正在执行签到...")
+        checkin_response = session.post(CHECKIN_URL, json={"data": "e30="})
         checkin_response.raise_for_status()
-        checkin_json = checkin_response.json()
-        
-        print("[2] ✅ 签到请求已成功发送并收到响应！")
-        print("-" * 26)
+        print("[2] ✅ 签到请求已发送！")
 
-        # --- 第3步：解码并分析结果 ---
-        print("[3] 正在解码服务器返回的签到数据...")
-
-        encoded_data = checkin_json.get('data')
+        # --- 解码 ---
+        print("\n[3] 正在解码服务器响应...")
+        encoded_data = checkin_response.json().get('data')
         if not encoded_data:
-            raise ValueError("签到响应中没有找到预期的'data'字段。")
-
-        # Base64解码
-        decoded_bytes = base64.b64decode(encoded_data)
-        # 将解码后的JSON字符串转换为Python字典
-        final_data = json.loads(decoded_bytes)
-        
+            raise ValueError("服务器响应中不含'data'字段。")
+        final_data = json.loads(base64.b64decode(encoded_data))
         print("[3] ✅ 解码成功！")
-        print("-" * 26)
 
-        # --- 最终结果展示 ---
-        print("\n---  🎉 签到最终结果 🎉  ---")
-        # 从解码后的数据中提取信息
-        message = final_data.get('msg', '没有消息')
-        reward_mb = final_data.get('data', {}).get('signUseRewardTraffic', 0)
-        
-        print(f"服务器消息: {message}")
-        print(f"获得流量: {reward_mb} MB")
-        print("----------------------------")
+        # ---【核心调试代码】---
+        # 下面的代码会把解码后的所有内容，原封不动地打印出来
+        print("\n" + "="*40)
+        print("  解码后的服务器原始数据 (RAW DATA):")
+        print("="*40)
+        # 使用json.dumps让输出格式更美观，ensure_ascii=False确保中文能正常显示
+        print(json.dumps(final_data, indent=2, ensure_ascii=False))
+        print("="*40)
 
-
-    except requests.exceptions.HTTPError as http_err:
-        print(f"\n❌ 执行失败：服务器返回了错误状态码。")
-        print(f"   错误详情: {http_err}")
-        print(f"   请检查URL是否正确，或服务器是否正常运行。")
     except Exception as e:
-        print(f"\n❌ 执行失败：脚本在运行时发生了一个意外错误。")
+        print(f"\n❌ 执行失败：发生错误。")
         print(f"   错误详情: {e}")
 
 
-# --- 脚本主入口 ---
 if __name__ == "__main__":
-    if "your_email@example.com" in USERNAME or "your_password" in PASSWORD:
-        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-        print("!!  错误：请先在脚本中填写您的 USERNAME 和 PASSWORD  !!")
-        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    if "your_new_account_password" in PASSWORD:
+        print("!! 错误：请在脚本中填写您的新账号密码 !!")
     else:
-        # 在运行前，请确保您已经安装了requests库
-        # 打开终端/命令行，运行: pip install requests
-        run_local_checkin_test()
+        # 确保您是用一个【从未签到过】的新账号来运行此脚本！
+        # 如果不确定，请再注册一个全新的账号来测试。
+        run_debug_checkin()
