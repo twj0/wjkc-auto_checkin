@@ -1,35 +1,27 @@
-name: wjkc.lol Automatic Daily Check-in (Multi-Account Cookie)
+name: wjkc.lol Automatic Daily Check-in (Correct Multi-Account)
 
 on:
   schedule:
-    # 北京时间每天早上8点10分执行 (UTC时间 00:10)
-    - cron: '10 0 * * *'
-  # 允许在Actions页面手动触发
+    - cron: '10 0 * * *' # 北京时间每天早上8点10分
   workflow_dispatch:
 
 jobs:
   checkin-job:
     runs-on: ubuntu-latest
     env:
-      # --- 多账户Token配置 ---
-      # 请在仓库的Secrets中，按需设置 WJKC_TOKEN1, WJKC_TOKEN2, ...
-      # 您可以设置任意多个，脚本会自动检测。
-      WJKC_TOKEN1: ${{ secrets.WJKC_TOKEN1 }}
-      WJKC_TOKEN2: ${{ secrets.WJKC_TOKEN2 }}
-      WJKC_TOKEN3: ${{ secrets.WJKC_TOKEN3 }}
-      # ...可以一直添加下去
+      # --- 推荐的多账户配置方式 ---
+      # 在仓库的Secrets中，创建一个名为 WJKC_TOKENS (注意是复数) 的Secret。
+      # 将您所有的Cookie值，用【英文逗号(,)】分隔，然后粘贴到这一个Secret里。
+      # 例如: token_value_1,token_value_2,token_value_3
+      WJKC_TOKENS: ${{ secrets.WJKC_TOKENS }}
       
       # --- Telegram推送 (所有账户共用) ---
       BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
       CHAT_ID: ${{ secrets.CHAT_ID }}
 
     steps:
-      - name: Checkout repository code
-        uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with: { python-version: '3.9' }
-      - name: Install Python Dependencies
-        run: pip install requests
-      - name: Run the Multi-Account Check-in Script
-        run: python auto_checkin.py
+      - run: pip install requests
+      - run: python auto_checkin.py
