@@ -1,27 +1,36 @@
-name: wjkc.lol Automatic Daily Check-in (Requests)
+name: wjkc.lol Automatic Daily Check-in (Cookie Method)
 
 on:
   schedule:
-    - cron: '10 0 * * *' # 北京时间每天早上8点10分
+    # 北京时间每天早上8点10分执行 (UTC时间 00:10)
+    - cron: '10 0 * * *'
+  # 允许在Actions页面手动触发
   workflow_dispatch:
 
 jobs:
   checkin-job:
     runs-on: ubuntu-latest
     env:
-      USER1: ${{ secrets.USER1 }}
-      PASS1: ${{ secrets.PASS1 }}
+      # 在你的仓库 Settings > Secrets and variables > Actions 中设置以下密钥
+      # 这是我们最重要的“万能钥匙”，请确保它的安全
+      WJKC_TOKEN: ${{ secrets.WJKC_TOKEN }}
+      
+      # Telegram推送是可选的，如果不需要可以留空
       BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
       CHAT_ID: ${{ secrets.CHAT_ID }}
 
     steps:
       - name: Checkout repository code
         uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v5
-        with: { python-version: '3.9' }
-      # 我们只需要安装requests
+        with:
+          python-version: '3.9'
+      
+      # 我们只需要最基础的requests库
       - name: Install Python Dependencies
         run: pip install requests
-      - name: Run the Check-in Script
+          
+      - name: Run the Final Check-in Script
         run: python auto_checkin.py
