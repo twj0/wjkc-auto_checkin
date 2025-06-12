@@ -1,4 +1,4 @@
-name: wjkc.lol Automatic Daily Check-in (Cookie Method)
+name: wjkc.lol Automatic Daily Check-in (Multi-Account Cookie)
 
 on:
   schedule:
@@ -11,26 +11,25 @@ jobs:
   checkin-job:
     runs-on: ubuntu-latest
     env:
-      # 在你的仓库 Settings > Secrets and variables > Actions 中设置以下密钥
-      # 这是我们最重要的“万能钥匙”，请确保它的安全
-      WJKC_TOKEN: ${{ secrets.WJKC_TOKEN }}
+      # --- 多账户Token配置 ---
+      # 请在仓库的Secrets中，按需设置 WJKC_TOKEN1, WJKC_TOKEN2, ...
+      # 您可以设置任意多个，脚本会自动检测。
+      WJKC_TOKEN1: ${{ secrets.WJKC_TOKEN1 }}
+      WJKC_TOKEN2: ${{ secrets.WJKC_TOKEN2 }}
+      WJKC_TOKEN3: ${{ secrets.WJKC_TOKEN3 }}
+      # ...可以一直添加下去
       
-      # Telegram推送是可选的，如果不需要可以留空
+      # --- Telegram推送 (所有账户共用) ---
       BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
       CHAT_ID: ${{ secrets.CHAT_ID }}
 
     steps:
       - name: Checkout repository code
         uses: actions/checkout@v4
-
       - name: Set up Python
         uses: actions/setup-python@v5
-        with:
-          python-version: '3.9'
-      
-      # 我们只需要最基础的requests库
+        with: { python-version: '3.9' }
       - name: Install Python Dependencies
         run: pip install requests
-          
-      - name: Run the Final Check-in Script
+      - name: Run the Multi-Account Check-in Script
         run: python auto_checkin.py
