@@ -31,8 +31,12 @@
     -   **Value**: 您的 `wjkc.lol` 账户凭据，**JSON 格式的字符串**。
         *   **示例**:
             ```json
-            [{"name": "MyAccount1", "username": "your_username1", "password": "your_password1"}, 
-            {"name": "MyAccount2", "username": "your_username2", "password": "your_password2"}]
+            [{"name": "MyAccount1", 
+              "username": "your_username1", 
+              "password": "your_password1"}, 
+            {"name": "MyAccount2",
+              "username": "your_username2",
+              "password": "your_password2"}]
             ```
            `name` 字段是可选的，用于在日志中标识账户。
            请确保 `username` 和 `password` 字段正确。
