@@ -5,15 +5,14 @@
 ## ✨ 主要特性
 
 - **多账户支持**: 可通过 GitHub Secrets 配置多个账户，脚本会自动为每个账户执行签到。
+- **自动 Token 更新**: 脚本现在支持通过登录凭据自动获取并更新 `token`，无需手动复制粘贴。
 - **完全自动化**: 基于 GitHub Actions，每日定时自动运行，无需任何手动干预。
 - **实时通知**: 支持通过 Telegram Bot 推送每次签到的结果，让您对账户状态了如指掌。
 
 
 ## ⚙️ 核心原理
 
-本脚本的核心原理是**放弃模拟复杂的登录过程，直接使用一个长期有效的会话凭证（`token` Cookie）来执行签到操作。**
-
-用户在浏览器中成功登录，服务器会下发一个`token`，这个`token`在不主动退出登录或清除浏览器数据的情况下，可以维持相当长一段时间的有效性。
+本脚本的核心原理是**通过模拟浏览器登录获取最新的会话凭证（`token` Cookie），并使用此 `token` 来执行签到操作。** 脚本会自动管理 `token` 的更新，确保其长期有效性。
 
 ## 🚀 部署指南
 
@@ -23,47 +22,31 @@
 
 点击本页面右上角的 **`Fork`** 按钮，将此仓库复制到您自己的 GitHub 账户下。接下来的所有操作都在您自己的仓库中进行。
 
-### 第2步：获取账户的`token` (最关键的一步)
-
-您需要为您希望自动签到的每一个账户，获取其对应的`token` Cookie值。
-
-**重要提示**: 正如您所发现的，在**同一个浏览器**中登录不同的账户，只会得到**同一个`token`**，因为浏览器会共享会话。为了给不同的账户获取**独立的`token`**，您必须在**隔离的环境**中操作。以下提供两种推荐的方法：
-
-#### 方法A：使用不同的浏览器
-
-这是最简单直接的方法。
-
-1.  **账户1 (使用Chrome浏览器)**:
-    *   在Chrome浏览器中，**正常登录**您的第一个`wjkc.lol`账户。
-    *   按 `F12` 打开开发者工具。
-    *   点击 **`Application` (应用)** 标签页。
-    *   在左侧菜单中，展开 `Storage` (存储) -> **`Cookies`** -> 点击 `https://wjkc.lol`。
-    *   在右侧列表中，找到名称为 **`token`** 的那一项。
-    *   双击它对应的 **`Value` (值)** 那一栏，并**完整地复制**这一长串字符。
-    *   将这个值保存好，这是**账户1**的`token`。
-
-2.  **账户2 (使用Edge或其他浏览器)**:
-    *   打开一个**不同的浏览器**（例如 Microsoft Edge, Firefox, Safari等）。
-    *   在这个新浏览器中，**正常登录**您的第二个`wjkc.lol`账户。
-    *   重复上述`F12 -> Application -> Cookies`的步骤，找到并复制第二个账户的`token`值。
-    *   这是**账户2**的`token`。
-
-#### 方法B：使用指纹浏览器
-指纹浏览器应该也是可以实现的，但由于我没有测试过，所以不提供具体的说明。
-
-### 第3步：合并`token`
-
-将您获取到的所有`token`值，用**英文逗号(`,`)**连接起来，中间不要有空格。
-
-**例如**: `cookie_value_of_account_1,cookie_value_of_account_2,114514-abcd-efgh-ijkl-567890`
-
-### 第4步：设置 GitHub Secrets
+### 第2步：设置 GitHub Secrets
 
 进入您Fork后的仓库，点击 `Settings` -> `Secrets and variables` -> `Actions`。然后点击 `New repository secret`，添加以下机密信息：
 
--   **`WJKC_TOKENS`**:
+-   **`WJKC_CREDENTIALS`**:
+    -   **Name**: `WJKC_CREDENTIALS`
+    -   **Value**: 您的 `wjkc.lol` 账户凭据，**JSON 格式的字符串**。
+        *   **示例**:
+            ```json
+            [{"name": "MyAccount1", "username": "your_username1", "password": "your_password1"}, 
+            {"name": "MyAccount2", "username": "your_username2", "password": "your_password2"}]
+            ```
+           `name` 字段是可选的，用于在日志中标识账户。
+           请确保 `username` 和 `password` 字段正确。
+
+-   **`GH_TOKEN`**:
+    -   **Name**: `GH_TOKEN`
+    -   **Value**: 一个具有 `repo` 权限的 GitHub Personal Access Token (PAT)。此 Token 用于脚本自动更新仓库中的 `WJKC_TOKENS` 机密。
+        *   **如何获取**: 前往 GitHub `Settings` -> `Developer settings` -> `Personal access tokens` -> `Tokens (classic)` -> `Generate new token`。确保勾选 `repo` 权限。
+
+-   **`WJKC_TOKENS`** (可选):
     -   **Name**: `WJKC_TOKENS` (请注意是复数`S`)
-    -   **Value**: 粘贴您在**第3步**中合并好的那一长串`token`字符串。
+    -   **Value**: 您现有的 `wjkc.lol` token，以逗号(`,`)分隔。
+        *   **用途**: 如果通过登录获取新 token 失败，脚本将回退到使用此处的 token 进行签到。
+        *   **格式示例**: `cookie_value_of_account_1,cookie_value_of_account_2`
 
 -   **`BOT_TOKEN`** (可选):
     -   **Name**: `BOT_TOKEN`
@@ -73,28 +56,28 @@
     -   **Name**: `CHAT_ID`
     -   **Value**: 您的Telegram用户ID或频道的ID，用于接收通知。
 
-### 第5步：启动自动化
+### 第3步：启动自动化
 
 设置完Secrets后，您的自动化方案已经配置完毕。您可以等待第二天的定时任务自动运行，或者：
 
 1.  进入仓库的 **`Actions`** 标签页。
-2.  在左侧选择 **`wjkc.lol Automatic Daily Check-in (Cookie Method)`**。
+2.  在左侧选择 **`WJKC Auto Checkin and Token Update`**。
 3.  点击 **`Run workflow`** 按钮来手动触发一次，以立即验证您的配置是否成功。
 
 ## 📝 文件结构
 
--   **`.github/workflows/checkin.yaml`**: GitHub Actions的工作流配置文件，负责定时启动任务、安装依赖并运行脚本。
--   **`auto_checkin.py`**: 核心的Python脚本，负责使用您提供的`WJKC_TOKENS`来执行所有账户的签到任务。
+-   **`.github/workflows/auto_checkin.yml`**: GitHub Actions的工作流配置文件，负责定时启动任务、安装依赖并运行脚本。
+-   **`auto_checkin.py`**: 核心的Python脚本，负责协调 `token` 获取、更新和签到任务。
+-   **`get_token.py`**: 负责使用 Selenium 模拟浏览器登录 `wjkc.lol` 并获取 `token`。
+-   **`update_github_secret.py`**: 负责使用 GitHub API 更新仓库机密。
 
 ## ⚠️ 重要说明
 
--   这个`token`的有效期目前未知，但根据经验，只要您不主动在浏览器中点击“退出登录”，它通常可以维持很长一段时间。
--   如果某天您的签到任务开始失败，并提示“Token无效或已过期”，这说明您需要按照**第2步**的方法，重新获取一次`token`并更新到GitHub Secrets中。
+-   脚本现在会自动尝试获取和更新 `token`，大大减少了手动维护的频率。
+-   如果 `WJKC_CREDENTIALS` 配置不正确或登录失败，脚本将尝试使用 `WJKC_TOKENS` 中已有的 token 进行签到。
 -   本项目仅用于学习和技术交流，请勿用于非法用途。
 
 ---
-
-这个token应该一个月左右就不行了
 
 ## 结果示例
 我已经成功签到了五天了

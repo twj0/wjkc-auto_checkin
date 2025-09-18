@@ -1,0 +1,47 @@
+name: WJKC Auto Checkin and Token Update
+
+on:
+  workflow_dispatch: # 允许手动触发
+  schedule:
+    - cron: '0 0 * * *' # 每天 UTC 时间 00:00 运行
+
+jobs:
+  checkin:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        # 安装 Chrome 浏览器和 ChromeDriver
+        sudo apt-get update
+        sudo apt-get install -y google-chrome-stable
+        # ChromeDriver 会由 selenium 自动管理，或者通过 webdriver-manager 库安装
+        # 但在 GitHub Actions 中，通常需要手动确保 ChromeDriver 可用
+        # 这里我们依赖 selenium 的自动查找能力，或者在 get_token.py 中指定路径
+        # 对于 GitHub Actions，通常 ChromeDriver 已经预装或可以通过 apt 安装
+        # 如果遇到问题，可能需要手动下载并配置 ChromeDriver
+        # 例如：wget https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/115.0.5790.102/linux64/chromedriver-linux64.zip
+        # unzip chromedriver-linux64.zip
+        # sudo mv chromedriver-linux64/chromedriver /usr/local/bin/
+        # sudo chmod +x /usr/local/bin/chromedriver
+
+    - name: Run Auto Checkin and Token Update
+      env:
+        WJKC_CREDENTIALS: ${{ secrets.WJKC_CREDENTIALS }} # 多账户凭据，JSON 格式
+        WJKC_TOKENS: ${{ secrets.WJKC_TOKENS }} # 现有 token，如果登录获取失败则使用
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        GH_TOKEN: ${{ secrets.GH_TOKEN }} # 用于更新 GitHub Secret 的 token
+        BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+        CHAT_ID: ${{ secrets.CHAT_ID }}
+        # CHROMEDRIVER_PATH: /usr/local/bin/chromedriver # 如果需要指定 ChromeDriver 路径
+      run: python auto_checkin.py
