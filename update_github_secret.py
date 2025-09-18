@@ -1,12 +1,20 @@
 import os
-from nacl import encoding, public
 import base64
 import requests
 
-def encrypt(public_key: str, secret_value: str) -> str:
-    """Encrypt a Unicode string using the public key."""
-    public_key = public.PublicKey(public_key.encode("utf-8"), encoding.Base64Encoder())
-    sealed_box = public.SealedBox(public_key)
+def encrypt(public_key: str, secret_value: str) -> str | None:
+    """Encrypt a Unicode string using the public key.
+
+    Returns base64 ciphertext on success, or None if PyNaCl is missing.
+    """
+    try:
+        from nacl import encoding as nacl_encoding, public as nacl_public
+    except Exception:
+        print("缺少依赖 PyNaCl，无法加密并更新 GitHub Secrets。请在运行环境安装 PyNaCl。")
+        return None
+
+    pk = nacl_public.PublicKey(public_key.encode("utf-8"), nacl_encoding.Base64Encoder())
+    sealed_box = nacl_public.SealedBox(pk)
     encrypted = sealed_box.encrypt(secret_value.encode("utf-8"))
     return base64.b64encode(encrypted).decode("utf-8")
 
@@ -75,6 +83,8 @@ def update_github_repo_secret(repo_full_name, secret_name, secret_value, github_
 
         # 加密机密值
         encrypted_value = encrypt(public_key, secret_value)
+        if not encrypted_value:
+            return False
 
         # 更新机密
         update_secret_url = f"https://api.github.com/repos/{repo_full_name}/actions/secrets/{secret_name}"
