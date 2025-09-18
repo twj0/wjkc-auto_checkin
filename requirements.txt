@@ -1,6 +1,5 @@
 requests
 beautifulsoup4
 selenium
-pygithub
 PyNaCl
 webdriver-manager

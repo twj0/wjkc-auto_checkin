@@ -1,5 +1,4 @@
 import os
-from github import Github
 from nacl import encoding, public
 import base64
 import requests
@@ -52,9 +51,6 @@ def update_github_repo_secret(repo_full_name, secret_name, secret_value, github_
     :param github_token: 具有 repo 权限的 GitHub Personal Access Token
     """
     try:
-        g = Github(github_token)
-        repo = g.get_repo(repo_full_name)
-
         # 获取仓库的公钥
         # PyGithub 似乎没有直接提供获取 Actions Secrets Public Key 的方法
         # 需要直接使用 requests 库调用 GitHub API
