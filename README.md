@@ -86,3 +86,15 @@
 ## 结果示例
 我已经成功签到了五天了
 如图，tg bot自动推送[image.png](/屏幕截图%202025-06-17%20145816.png)
+
+## 🔧 常见问题（403 Forbidden 更新 Secrets 失败）
+
+- 原因与修复要点：
+  - 使用了 `GITHUB_TOKEN`：该令牌无法管理仓库 Secrets。请改用个人访问令牌 (PAT) 并通过工作流的 `secrets.GH_TOKEN` 传入。
+  - PAT 权限不足：
+    - 经典 PAT：勾选 `repo`（对私有仓库）或 `public_repo`（仅公共仓库）。
+    - 细粒度 PAT：给目标仓库授予 “Actions: Read and write” 和 “Repository secrets and variables: Read and write”。
+  - 仓库权限不足：PAT 对应账户需要在目标仓库至少具备维护者/管理员权限。
+  - 组织 SSO：若仓库属于启用 SSO 的组织，需要在 PAT 的 “Authorized” 页面为该组织授予 SSO 访问。
+
+脚本已在 `update_github_secret.py` 中输出更详细的 401/403 提示信息，便于定位具体原因。

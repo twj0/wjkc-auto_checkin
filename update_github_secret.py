@@ -11,6 +11,38 @@ def encrypt(public_key: str, secret_value: str) -> str:
     encrypted = sealed_box.encrypt(secret_value.encode("utf-8"))
     return base64.b64encode(encrypted).decode("utf-8")
 
+def _hint_from_http_error(resp: requests.Response) -> str:
+    try:
+        data = resp.json()
+        message = str(data.get("message", ""))
+    except Exception:
+        message = resp.text or ""
+
+    hints = []
+
+    if resp.status_code == 401:
+        hints.append("令牌无效或已过期（401）。请重新生成 PAT 并更新 GH_TOKEN。")
+
+    if resp.status_code == 403:
+        if "Resource protected by organization SSO" in message:
+            hints.append("组织启用了 SSO。请在 GitHub 的 Authorized OAuth Apps 中为该 PAT 开启 SSO 权限。")
+        if "Resource not accessible by integration" in message:
+            hints.append("GITHUB_TOKEN 无法管理仓库 Secrets。请使用具备权限的个人访问令牌 (PAT) 通过 GH_TOKEN 传入。")
+        if "Must have admin rights to Repository" in message or "must be an admin" in message.lower():
+            hints.append("当前令牌对应账户对仓库无管理员权限。请将该账户加入仓库并授予 Admin/维护者权限，或改用拥有权限的 PAT。")
+        # Fine-grained PAT 常见问题：未勾选必要权限
+        if "fine-grained" in message.lower() or "permissions" in message.lower():
+            hints.append("若使用细粒度 PAT，请为目标仓库授予：Actions (Read and write) 与 Repository secrets/variables (Read and write)。")
+
+    if resp.status_code == 404:
+        hints.append("找不到资源（404）。请检查 repo 全名是否正确，或 PAT 是否被授予对该仓库的访问权限。")
+
+    # 附上服务端返回信息，便于排查
+    base_info = f"HTTP {resp.status_code}: {message.strip()}"
+    hints.insert(0, base_info)
+    return " \n- ".join(hints)
+
+
 def update_github_repo_secret(repo_full_name, secret_name, secret_value, github_token):
     """
     更新 GitHub 仓库的指定机密。
@@ -34,7 +66,12 @@ def update_github_repo_secret(repo_full_name, secret_name, secret_value, github_
         }
         public_key_url = f"https://api.github.com/repos/{repo_full_name}/actions/secrets/public-key"
         response = requests.get(public_key_url, headers=headers)
-        response.raise_for_status()
+        try:
+            response.raise_for_status()
+        except requests.exceptions.HTTPError:
+            print("获取仓库 Actions 公钥失败。")
+            print(_hint_from_http_error(response))
+            return False
         public_key_data = response.json()
         
         public_key = public_key_data['key']
@@ -50,7 +87,12 @@ def update_github_repo_secret(repo_full_name, secret_name, secret_value, github_
             "key_id": public_key_id
         }
         response = requests.put(update_secret_url, headers=headers, json=payload)
-        response.raise_for_status()
+        try:
+            response.raise_for_status()
+        except requests.exceptions.HTTPError:
+            print("更新仓库机密失败。")
+            print(_hint_from_http_error(response))
+            return False
 
         print(f"成功更新 GitHub 仓库 '{repo_full_name}' 的机密 '{secret_name}'。")
         return True
