@@ -5,6 +5,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from webdriver_manager.chrome import ChromeDriverManager
 import time
 
 def get_wjkc_token(account_name, username, password):
@@ -18,10 +19,8 @@ def get_wjkc_token(account_name, username, password):
     chrome_options.add_argument("--window-size=1920,1080")
     chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36")
 
-    # 尝试从环境变量获取 ChromeDriver 路径，否则使用默认路径
-    # 在 GitHub Actions 中，通常会自动安装 ChromeDriver
-    driver_path = os.getenv('CHROMEDRIVER_PATH', '/usr/local/bin/chromedriver')
-    service = Service(executable_path=driver_path)
+    # 使用 ChromeDriverManager 自动下载和管理 ChromeDriver
+    service = Service(ChromeDriverManager().install())
     
     driver = webdriver.Chrome(service=service, options=chrome_options)
     
