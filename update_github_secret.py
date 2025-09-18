@@ -1,8 +1,9 @@
 import os
 import base64
 import requests
+from typing import Union
 
-def encrypt(public_key: str, secret_value: str) -> str | None:
+def encrypt(public_key: str, secret_value: str) -> Union[str, None]:
     """Encrypt a Unicode string using the public key.
 
     Returns base64 ciphertext on success, or None if PyNaCl is missing.
